@@ -1,12 +1,39 @@
-const { app, BrowserWindow, Menu, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron');
 const isDev = require('electron-is-dev');
 const path = require('path');
 const menuTemplate = require('./src/menuTemplate');
 const AppWindow = require('./src/AppWindow');
+const { autoUpdater } = require('electron-updater');
 
 let mainWindow, settingsWindow;
 
 app.on('ready', () => {
+  autoUpdater.autoDownload = false;
+  autoUpdater.checkForUpdatesAndNotify();
+  autoUpdater.on('error', (error) => {
+    dialog.showErrorBox('Error: ', error == null ? 'unknow' : error.static);
+  });
+  autoUpdater.on('update-available', () => {
+    dialog.showMessageBox(
+      {
+        type: 'info',
+        title: '应用有新的版本',
+        message: '发现新的版本是否现在更新？',
+        buttons: ['是', '否'],
+      },
+      (buttonIndex) => {
+        if (buttonIndex === 0) {
+          autoUpdater.downloadUpdate();
+        }
+      }
+    );
+  });
+  autoUpdater.on('update-not-available', () => {
+    dialog.showMessageBox({
+      title: '没有新版本',
+      message: '当前已是最新版本',
+    });
+  });
   const mainWindowConfig = {
     width: 1440,
     height: 768,
